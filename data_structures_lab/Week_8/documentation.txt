@@ -1,0 +1,835 @@
+1. We need to find the strongly connected components of a graph.
+	The concept we used is to find the ending time of the reverse directed graph of the original one. Then we sort the timing in decreasing order. The sorted nodes which has decreasing order of time were the starting point for the dfs in the original graph. The nodes connected to one node belong to same equilance class and are strongly connected.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int time1=0;		// global variable to find time of reverse graph
+
+
+typedef struct node		// structure for the node
+{			
+	int ver;		// vertex and the link to next node
+	struct node* link;
+}node;
+
+typedef struct Graph		// structure of graph containing array of linked list , int array for starting time, ending time and visited checking of every node
+{
+	node **head;
+	int *stm;
+	int *etm;
+	int *visited;
+}grh;
+
+typedef struct Dval		// structure which stores vertex and it's ending time
+{
+	int v, t;
+}Dval;
+
+Dval tg2[200];		// array of structure
+
+int comparator(const void *p1, const void *p2)		// comparator funtion for sorting according to the time
+{
+	int a, b;
+	a = ((Dval*)p1)->t;
+	b = ((Dval*)p2)->t;
+	return b-a;
+}
+
+grh *CrGr(int vtc)		// creating a graph with initializing all the values required
+{
+	grh *g;
+	g = (grh*)malloc(sizeof(grh));		// memory to the graph
+	
+	g->head = (node**)malloc(vtc*sizeof(node*));		// memory to array of linked lists and making head NULL
+	for(int i=0; i<vtc; i++)
+		g->head[i]=NULL;
+	
+	g->visited = (int*)malloc(vtc*sizeof(int));		// memory to visited arrry, initializing to not visited (i.e. 0)
+	for(int i=0; i<vtc; i++)
+		g->visited[i]=0;
+
+	g->stm = (int*)malloc(vtc*sizeof(int));		// memory, initialzing starting time and ending time to zero
+	for(int i=0; i<vtc; i++)
+		g->stm[i]=0;
+
+	g->etm = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		g->etm[i]=1000000;
+
+	return g;	
+}
+
+void addNode(node **ad_head, int ver)		// function to add node in sorted order
+{
+	node *head, *prev;			// node * head, node *previous (stores the address previous to head)
+	head=*ad_head;
+
+	prev = NULL;
+	node *nd;				
+	nd = (node*)malloc(sizeof(node));		// creating node and adding vertex to node
+	nd->ver = ver;
+	if(head==NULL)				// if head == NULL add at the beginning
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>(head->link)->ver)		// else go untill we find a node whose vertex is greater than the node vertex to be inserted or till the end of the linked list
+		{
+			prev = head;
+			head=head->link;
+		}
+		if(head->link==NULL && ver<head->ver)		------>	// if end is reached and vertex input is smaller than the last vertex already in the linked list
+		{						|
+			if(prev!=NULL)				|	// case 1. we are not at the beggining, then give address of head to the newly inserted node
+			{					|
+				prev->link = nd;		|
+				nd->link = head;		|
+			}					|
+			else					|	// else case 2. we are at the beggining, therefore add node at the beggining, we need to change the address stored in the head 
+			{					|
+				nd->link = *ad_head;		|
+				*ad_head=nd;			|
+			}					|	
+		}						|
+		else						----> esle we got a vertex which is greater than the vertex to be added, or we reached the end  
+		{
+			nd->link = head->link;
+			head->link = nd;			
+		}
+	}
+	return;
+}
+
+void displayList(grh *g, int vtc)				// function to display the formed adjacency list
+{	
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{	
+		head = g->head[i];				// points to the i'th linked list
+		if(head==NULL)					// if no element is attached to the corresponding node, print the node number.
+			printf("%d\n", i);
+		
+		else
+		{						// print all the adjacent vertex linked to the i'th vertex 
+			printf("%d->", i);
+			while(head->link!=NULL)				// untill we reach end of the linked list print all the elements
+			{
+				printf("%d->",head->ver);
+				head = head->link;
+			}
+			printf("%d\n", head->ver);
+		}
+	}
+	return;
+}
+
+void explore(grh *g, node *head)					// expore fuction for depth first search
+{
+	int ver;
+	if(head==NULL)							// if reach end backtrack
+		return;
+		
+	while(head!=NULL)					// else
+	{
+		//printf("Y\n");
+		ver = head->ver;			 // as soon as we see a new fresh vertex not yet visited, we make it visited and increse time
+		if(g->visited[ver]==0)
+		{
+			//printf("%p\n",head);
+			g->visited[ver]=1;
+			time1++;
+			//printf("ver %d, time %d\n", ver, time1);
+			g->stm[ver]=time1;			// store the starting time the vertex ver
+			explore(g, g->head[ver]);
+			time1++;				// after exploration of the vertex ver, we increase time again and store that in ending time of vertex
+			g->etm[ver]=time1;			
+		}
+		else
+			head=head->link;			// else if visited, go to the head->link
+	}
+	
+	return;
+}
+
+void dfs(grh *g, int vtc, int min)				// Depth first search funtion starting from the min postion up to the end. Actually we don't need min here
+{
+	for(int i=min; i<vtc; i++)
+	{
+		if(g->visited[i]==0)				// if see a fresh new vertex not yet visited same as above
+		{
+			g->visited[i]=1;
+			time1++;
+			//printf("ver %d, time %d\n", i, time1);
+			g->stm[i] = time1;
+			explore(g, g->head[i]);
+			time1++;
+			g->etm[i] = time1;
+		}
+	}
+	return;
+}
+
+void pexplore(grh *g, node *head)			// print explore funtion to print the strongly connected components
+{
+	int ver;
+	if(head==NULL)					// if head is NULL (not connectsed to any component or the last element) continue
+	{
+		//printf("\n");
+		return;
+	}
+		
+	while(head!=NULL)				// print untill we reach end 
+	{
+		ver = head->ver;			// connected vertex to the head
+		if(g->visited[ver]==0)				// if not yet visited, print and mark as visited
+		{
+			printf("%d$",ver);
+			g->visited[ver]=1;
+			pexplore(g, g->head[ver]);		
+		}
+		else
+			head=head->link;			// else go to next node
+	}
+	return;
+}
+
+void frf(node *head)				// recusive function to free up the node memory in the linked list
+{
+	if(head!=NULL)
+	{
+		if(head->link==NULL)		// first go uptill the end, and then from the end start freeeing up the memory
+		{
+			free(head);		
+			return;
+		}
+		else
+		{
+			frf(head->link);
+			free(head);
+			return;
+		}
+	}
+	return;			
+}
+
+int main()
+{
+	int vtc;
+	int u, v;
+	grh *g1, *g2;
+	
+	scanf("%d", &vtc);
+	
+	g1 = CrGr(vtc);			// creating two graphs 
+	g2 = CrGr(vtc);
+	while(scanf("%d %d", &u, &v)!=EOF)		// scanning untill file is ended
+	{
+		addNode(&(g1->head[u]), v);		// original graph
+		addNode(&(g2->head[v]), u);		// reverse graph
+	}
+
+
+	dfs(g2, vtc, 0);		// dfs on reverse graph
+
+	for(int i=0; i<vtc; i++)
+	{	
+		tg2[i].v = i;			// storing the end time and the vertices in the tg2 structure
+		tg2[i].t = g2->etm[i];		
+	}
+	
+	qsort((void*)tg2, vtc, sizeof(Dval), comparator);		// sorting according to the time of reverse graph
+
+	for(int i=0; i<vtc; i++)				// pexplore according to the decreasing time 
+	{
+		if(g1->visited[tg2[i].v]==0)			
+		{
+			printf("%d$",tg2[i].v);
+			g1->visited[tg2[i].v]=1;
+			pexplore(g1, g1->head[tg2[i].v]);
+			printf("\n");
+		}
+		
+	}	
+	
+	for(int i=0; i<vtc; i++)
+	{
+		frf(g1->head[i]);		// freeing up both the graphs liked lists
+		frf(g2->head[i]);
+	}
+	
+		
+	free(g1->head);				
+	free(g1->visited);
+	free(g1->etm);
+	free(g1->stm);
+	free(g1);
+					// freeing up all the rest things of both the graphs
+	free(g2->head);
+	free(g2->visited);
+	free(g2->etm);
+	free(g2->stm);
+	free(g2);
+
+	//displayList(g1, vtc);
+	//displayList(g2, vtc);	
+	return 0;	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int flag =0;			// global variable to help in sorting
+
+typedef struct node		// same as specified above
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Queue		// queue for storing the visited vertices
+{
+	int front, rear, capacity;
+	int *arr;
+}Queue;
+
+typedef struct Graph			// same as specified above
+{
+	node **head;
+	int *visited;
+	int *distance;
+	Queue *qu;
+}graph;
+
+typedef struct sort		// structure for sorting according to the first index in the bfs
+{
+	int v1,v2;
+}sort;
+
+sort e[500];			// array of structure above 
+
+int comparator(const void *p1, const void *p2)				// same as specified above
+{
+	int a, b;
+	a = ((sort*)p1)->v1;
+	b = ((sort*)p2)->v1;
+	if(a!=b)			// if first vertices are not same sort according to them 
+		return a-b;
+	else				// else if first vertices are same, sort according to the second one 
+	{
+		a=((sort*)p1)->v2;
+		b=((sort*)p2)->v2;
+		return a-b;
+	} 
+}
+
+void addNode(node **ad_head, int ver)			// same as specified above
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));
+	nd->data = ver;
+	if(head==NULL)
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>((head->link)->data))
+		{
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)
+		{
+			nd->link = head;
+			if(prev!=NULL)
+				prev->link=nd;
+			else
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else
+		{	
+			nd->link = head->link;
+			head->link=nd;
+		}	
+		return;
+	}
+}
+
+graph* createGraph(int vtc)				// same as specified above
+{
+	
+	int edg, ver1, ver2;
+	graph *gr;
+	gr = (graph*)malloc(sizeof(graph));
+	
+	gr->head = (node**)malloc(vtc*sizeof(node*));
+	for(int i=0; i<vtc; i++)
+		(gr->head)[i]=NULL;                                    
+	
+	gr->visited = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		(gr->visited)[i]=0;
+	
+	gr->qu = (Queue*)malloc(sizeof(Queue));			// queue for storing the visited vertices
+	(gr->qu)->front = 0;
+	(gr->qu)->rear = -1;			// stores the last filled element address (index) 
+	(gr->qu)->arr = (int*)malloc(vtc*sizeof(int));
+	(gr->qu)->capacity = vtc+1;		// capacity of the queue
+	
+	return gr;
+}
+
+void queue(Queue *qu, int ver)		// enque function to add vertex
+{	
+	qu->rear =qu->rear+1;
+	(qu->arr)[qu->rear]=ver;
+	return; 
+}
+
+int dequeue(Queue *qu)			// deque function to take out the vertex at the front
+{
+	if(qu->front>=qu->rear+1)		// if queue is empty
+		return -1;
+	int ver;
+	ver = (qu->arr)[qu->front];
+	qu->front =qu->front+1;
+	return ver; 
+}
+
+void displayList(graph* gr, int vtc)		// same as specified above
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		head = (gr->head)[i];
+		if(head!=NULL)
+		{
+			printf("%d->", i);
+			while(head->link!=NULL)
+			{
+				printf("%d->",head->data);
+				head= head->link;
+			}
+			printf("%d\n", head->data);
+		}
+		else
+			printf("%d\n",i);
+		
+	}
+	return;
+}
+
+void breadthFirstSearch(graph *gr, int v)		// Breadth first search function
+{
+	node *head;
+	int i, ver;
+		
+	(gr->qu)->front = 0;
+	(gr->qu)->rear = -1;
+	queue(gr->qu, v);
+	//printf("%d is queued here\n", ver);
+	(gr->visited)[v]=1;			// if see a fresh new variable enque it
+	while(1)		// infinite loop 
+	{
+		ver = dequeue(gr->qu);		// we dequeue the vertex and see all the adjacent vertices of this vertex.
+		if(ver==-1)			// if queue is empty break (condition to come out the infinite loop)
+			break;
+		i = ver;
+		//printf("%d is dequed here\n", ver);
+		head=(gr->head)[ver];
+		while(head!=NULL)		// untill head is not pointing to any next vertex
+		{
+			ver = head->data;		// next vertex
+			if((gr->visited)[ver]==0)		// if not visited
+			{
+				//printf("(%d,%d)\n", i, ver);
+				e[flag].v1 = i;		// storing in the structure for sorting 
+				e[flag].v2 = ver;
+				flag++;
+				(gr->visited)[ver]=1;
+				queue(gr->qu, ver);	
+// as soon as we add any vertex to queue, we make it visited, so that we will not check it again, but at the time of dequeu of that element we find all the adjacent elements of that vertex.
+				//printf("%d is queued here\n", ver);
+				
+				//printf("%p\n", head);
+			}
+			head = head->link;		// same as specified above
+		}
+		
+	}
+	return;
+}
+
+
+
+
+void display(graph *gr, int vtc)		// display the graph 
+{	
+	for(int i=0; i<vtc; i++)
+		printf("%d ", (gr->qu->arr)[i]);
+	
+	printf("\n");
+	return;
+}
+
+void frf(node *head)			// same as specified above
+{
+	if(head!=NULL)
+	{
+		if(head->link==NULL)
+		{
+			free(head);
+			return;
+		}
+		else
+		{
+			frf(head->link);
+			free(head);
+			return;
+		}
+	}
+	return;
+}
+
+int main()
+{	
+	graph *gr;
+	int vtc, ver1, ver2, dst;
+	//printf("Enter the total number of vertices: ");
+	scanf("%d", &vtc);
+	gr = createGraph(vtc);
+	while(scanf("%d %d", &ver1, &ver2)!=EOF)	// same as specified above
+	{
+		addNode(&((gr->head)[ver1]), ver2);
+	}
+	//displayList(gr, vtc);
+	breadthFirstSearch(gr, 0);			// bfs starting from the 0 the node
+	qsort((void*)e, flag, sizeof(sort), comparator);	// sorting according to the first index
+	for(int i=0; i<flag; i++)
+		printf("(%d,%d)\n",e[i].v1, e[i].v2);		//printing in the required manner
+	
+	for(int i=0; i<vtc; i++)		// same as specified above
+	{
+		frf(gr->head[i]);
+	}
+	
+	free(gr->head);
+	free(gr->visited);
+	free(gr->qu->arr);		// same as specified above
+	free(gr->qu);
+	free(gr);
+	
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int flag =0;			// global variable to help in sorting
+
+typedef struct node		// same as specified above
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Queue		// queue for storing the visited vertices
+{
+	int front, rear, capacity;
+	int *arr;
+}Queue;
+
+typedef struct Graph			// same as specified above
+{
+	node **head;
+	int *visited;
+	int *distance;
+	Queue *qu;
+}graph;
+
+typedef struct sort		// structure for sorting according to the first index in the bfs
+{
+	int v1,v2;
+}sort;
+
+sort e[500];			// array of structure above 
+
+int comparator(const void *p1, const void *p2)				// same as specified above
+{
+	int a, b;
+	a = ((sort*)p1)->v1;
+	b = ((sort*)p2)->v1;
+	if(a!=b)			// if first vertices are not same sort according to them 
+		return a-b;
+	else				// else if first vertices are same, sort according to the second one 
+	{
+		a=((sort*)p1)->v2;
+		b=((sort*)p2)->v2;
+		return a-b;
+	} 
+}
+
+void addNode(node **ad_head, int ver)			// same as specified above
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));
+	nd->data = ver;
+	if(head==NULL)
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>((head->link)->data))
+		{
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)
+		{
+			nd->link = head;
+			if(prev!=NULL)
+				prev->link=nd;
+			else
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else
+		{	
+			nd->link = head->link;
+			head->link=nd;
+		}	
+		return;
+	}
+}
+
+graph* createGraph(int vtc)				// same as specified above
+{
+	
+	int edg, ver1, ver2;
+	graph *gr;
+	gr = (graph*)malloc(sizeof(graph));
+	
+	gr->head = (node**)malloc(vtc*sizeof(node*));
+	for(int i=0; i<vtc; i++)
+		(gr->head)[i]=NULL;                                    
+	
+	gr->visited = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		(gr->visited)[i]=0;
+	
+	gr->distance=(int*)malloc(vtc*sizeof(int));		// stores the distance from a specified vertex
+	for(int i=0; i<vtc; i++)
+		(gr->distance)[i]=-1;
+	
+	gr->qu = (Queue*)malloc(sizeof(Queue));			// queue for storing the visited vertices
+	(gr->qu)->front = 0;
+	(gr->qu)->rear = -1;			// stores the last filled element address (index) 
+	(gr->qu)->arr = (int*)malloc(vtc*sizeof(int));
+	(gr->qu)->capacity = vtc+1;		// capacity of the queue
+	
+	return gr;
+}
+
+void queue(Queue *qu, int ver)		// enque function to add vertex
+{	
+	qu->rear =qu->rear+1;
+	(qu->arr)[qu->rear]=ver;
+	return; 
+}
+
+int dequeue(Queue *qu)			// deque function to take out the vertex at the front
+{
+	if(qu->front>=qu->rear+1)		// if queue is empty
+		return -1;
+	int ver;
+	ver = (qu->arr)[qu->front];
+	qu->front =qu->front+1;
+	return ver; 
+}
+
+void displayList(graph* gr, int vtc)		// same as specified above
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		head = (gr->head)[i];
+		if(head!=NULL)
+		{
+			printf("%d->", i);
+			while(head->link!=NULL)
+			{
+				printf("%d->",head->data);
+				head= head->link;
+			}
+			printf("%d\n", head->data);
+		}
+		else
+			printf("%d\n",i);
+		
+	}
+	return;
+}
+
+void shortestDistance(graph *gr, int ver1, int vtc)		// fuction to find distance of the vertex 1 from all the nodes
+{
+	int v;
+	
+	for(int i=0; i<vtc; i++)		// we need to again initialize all the values after finding the distance of the vetex to all nodes
+	{
+		gr->visited[i]=0;
+		gr->distance[i]=-1;
+		gr->qu->arr[i]=-1;
+	}
+		
+	gr->qu->front = 0;			// we need to initialize rear and front of the queue also
+	(gr->qu)->rear = -1;
+	
+	int  u;
+	gr->distance[ver1]=0;		// distance from itself is 0
+	node *head ;
+	queue(gr->qu, ver1);
+	(gr->visited)[ver1]=1;
+	while(1)
+	{
+		
+		v=dequeue(gr->qu);		// taking out the visited vertex from the queue
+		//printf("ver1 %d\n", ver1);
+		if(v==-1)			// if queue is empty break
+			break;
+		head=(gr->head)[v];
+		
+		while(head!=NULL)
+		{
+			u = head->data;
+			if((gr->visited)[u]==0)		// if not visited yet
+			{
+				(gr->distance)[u]=(gr->distance[v])+1;		// distance of all the adjacent vertices to the vertex v (dequed above) = distance of vertex v from original vertex ver1 + 1
+				(gr->visited)[u]=1;
+				queue(gr->qu, u);
+			}
+			head=head->link;		// else go to the next adjacent node
+		}
+		
+	}
+	
+	for(int i=0; i<vtc; i++)			// now we got the distance of ver1 from all the nodes, we print all the values
+		printf("dist(%d,%d)=%d\n", ver1, i, gr->distance[i]);
+	
+	return ;
+}
+
+void frf(node *head)			// same as specified above
+{
+	if(head!=NULL)
+	{
+		if(head->link==NULL)
+		{
+			free(head);
+			return;
+		}
+		else
+		{
+			frf(head->link);
+			free(head);
+			return;
+		}
+	}
+	return;
+}
+
+int main()
+{	
+	graph *gr;
+	int vtc, ver1, ver2, dst;
+	scanf("%d", &vtc);
+	gr = createGraph(vtc);
+	while(scanf("%d %d", &ver1, &ver2)!=EOF)	// same as specified above
+	{
+		addNode(&((gr->head)[ver1]), ver2);
+	}
+	
+	for(int i=0; i<vtc; i++)			// shortest distance of each vertex from others
+	{	
+		shortestDistance(gr, i, vtc);
+	}
+	
+	for(int i=0; i<vtc; i++)		// same as specified above
+	{
+		frf(gr->head[i]);
+	}
+	
+	free(gr->head);
+	free(gr->visited);
+	free(gr->distance);
+	free(gr->qu->arr);	// same as specified above
+	free(gr->qu);
+	free(gr);
+	
+	return 0;
+}
+
+
+
+

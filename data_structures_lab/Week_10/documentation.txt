@@ -1,0 +1,503 @@
+1.
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+int occ = 0;		// global variable which stores the occurence of each value
+int ind=1;			// global variable which increases at the time of insertion of a node
+
+typedef struct node	// node structure, contains index(idx), value(val), pointer to left node(*lft) and pointer to right node
+{
+	int val, idx;
+	struct node *lft, *rgt;
+}node;
+
+int stoi(char *str)		// function for converting string to integer
+{
+    int x;
+    sscanf(str, "%d", &x);	// takes string converts to integer
+    return x;
+}
+
+node *createNode(int val, int idx)		// function that creates node, takes index at which we need to add and value to be added and return the created node 
+{
+	node *nd;
+	nd = (node*)malloc(sizeof(node));		// allocation of memory to the node
+	nd->idx = idx;				// index
+	nd->val = val;				// value
+	nd->lft = NULL;				// NULL to the lft and right child
+	nd->rgt = NULL;
+	return nd;				// return the created node
+}
+
+node *search(node *root, int idx)		// searched the index in the tree, returns the address of the node if we finds the index
+{
+	if(root==NULL)				// if reaches an end point return NULL
+		return NULL;
+	node *sp;
+	if(root->idx==idx)			// if input index is greater than the global index ind (not possible) return NULL
+		return root;
+	sp = search(root->lft, idx);		// else search the index in the left of the tree
+	if(sp!=NULL)				// if we don't get a NULL return the node
+		return sp;
+	return search(root->rgt, idx);		// else return the value in the search of the right of the tree
+}
+
+node *insNode(node *root, int val, int idx, char c)	
+		// function which inserts a node, takes input value, index and a character and return the address of the inserted pointer 
+{	
+	node *sp;
+	sp = search(root, idx);				// find the pointer of the node which has index idx
+	if(sp==NULL)					// if there is no node at index idx return NULL
+		return NULL;	
+	if(c=='l')						// means we need to add at the left side of the node
+	{
+		if(sp->lft!=NULL)				// if already filled then return NULL
+			return NULL;
+		sp->lft = createNode(val, ind+1);	// else create Node with index+1 as index and return it's pointer
+		ind++;					// increase the index
+		return sp->lft;
+	}
+	else							// means we need to add at the right side of the node
+	{
+		if(sp->rgt!=NULL)				// if right node is not NULL, then return NULL
+			return NULL;
+		sp->rgt = createNode(val, ind+1);		// else create node with index+1 as index and return it's pointer
+		ind++;					// increase the index
+		return sp->rgt;
+	}
+}
+
+void occurence(node *root, int k)		// function to calculate the number of occurence of the integer k
+{		
+	if(root==NULL)				// if reached an end return
+		return;
+	if(root->val==k)				// if find the value then increase the occurence global variable
+		occ++;
+	occurence(root->lft, k);		// find the k in the left of the node
+	occurence(root->rgt, k);		// the the k in the right of the node
+	return;
+}
+
+void ppOrder(node *root)			// printing the PREORDER
+{
+	if(root==NULL)			// if reach end return
+		return;
+	printf("%d ", root->val);		// print element then go to left one and then right one
+	ppOrder(root->lft);
+	ppOrder(root->rgt);
+	return;
+}
+
+void pinOrder(node *root)			// printing in INORDER
+{
+	if(root==NULL)			// if reach end return
+		return;
+	pinOrder(root->lft);		// print left, then node itself and then right one
+	printf("%d ", root->val);
+	pinOrder(root->rgt);
+	return;
+}
+
+void pstOrder(node *root)		// printing in post order
+{
+	if(root==NULL)			// same as above
+		return;
+	pstOrder(root->lft);		// printf left, then right and then node itself
+	pstOrder(root->rgt);
+	printf("%d ", root->val);
+	return;
+}
+
+void ffree(node *root)		// function to free up the memory, takes root and free up all the memory recusively
+{
+	if(root==NULL)			// if reach an end return
+		return;
+	else if(root->lft==NULL && root->rgt==NULL)		// if both left and right child are node there free up the node
+	{
+		free(root);
+		return;
+	}
+	else if(root->lft==NULL)			// else if it's left child doesn't exists
+	{
+		ffree(root->rgt);				// call function on the right child of it and then free it
+		free(root);
+	}
+	else if(root->rgt==NULL)			// else if it's right child doesn't exists
+	{
+		ffree(root->lft);				// call function on the left child of it and then free it
+		free(root);
+	}
+	else 
+	{
+		ffree(root->lft);				// means both left and right child exists
+		ffree(root->rgt);				// call function on both the child
+		free(root);					// free node
+		return;
+	}
+	return;
+}
+
+int main (int argc, char **argv)
+{
+	char line[128];
+    char v1[15];
+    char v2[15];
+    char v3[15];
+	char v4[15];
+	int i=0;
+	node *root;
+	node *pt;
+	int val;
+	scanf("%d", &val);
+	root = (node*)malloc(sizeof(node));			// memory for root
+	root->lft = NULL;
+	root->rgt = NULL;
+	root->val = val;
+	root->idx = 1;					// root has index 1
+	
+	while(fgets(line, sizeof(line), stdin)!=NULL)
+	{
+		sscanf(line, "%s %s %s %s", v1, v2, v3, v4);
+		if(strcmp(v1, "INS")==0)
+		{
+			pt = insNode(root, stoi(v2), stoi(v3), v4[0]);		// insert node, if NULL came out means not able to insert, print -1
+			if(pt==NULL)
+				printf("-1\n");
+			
+		}		
+		else if(strcmp(v1, "PRE")==0)			// printing in preorder
+		{
+			ppOrder(root);
+			printf("\n");
+		}
+		else if(strcmp(v1, "INO")==0)			// printing in inorder
+		{
+			pinOrder(root);
+			printf("\n");		
+		}		
+		else if(strcmp(v1, "PST")==0)			// printing in postorder
+		{
+			pstOrder(root);
+			printf("\n");
+		}		
+		else if(strcmp(v1, "OCC")==0)			// finding occurence of the number k
+		{
+			occurence(root, stoi(v2));
+			printf("%d\n", occ);
+			occ=0;					// reinitialzation of occurence variable to use it agian
+		}
+	}
+	
+	ffree(root);				// free up the tree
+	return 0; 	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+typedef struct node		// structure for the node, contains integer value, address for the left node, address for the right node and address for the parent node
+{
+	int val;
+	struct node *lft, *rgt, *prt;
+}node;
+
+int stoi(char *str)		// same as specified above
+{
+    int x;
+    sscanf(str, "%d", &x);
+    return x;
+}
+
+node *createNode(int val)		// function for creating node, takes integer value and returns address of the created node
+{
+	node *nd;
+	nd = (node*)malloc(sizeof(node));
+	nd->val = val;
+	nd->lft = NULL;
+	nd->rgt = NULL;
+	return nd;
+}
+
+node *search(node *root, int val)		// search for a integer value in the tree, gives address of the node which has val as it's value
+{
+	node *pt;
+	if(root==NULL)				// if didn't get any point return NULL
+		return NULL;
+	if(root->val==val)			// if we find out the value return the address of the node
+		return root;
+	else if(root->val>val)			// else if the value is smaller than the root value, try finding the value in the left part of the tree
+	{
+		pt = search(root->lft, val);
+		return pt;
+	}
+	else 						// if the value is greater than the root value, try finding the value in the right part of the tree
+	{
+		pt = search(root->rgt, val);
+		return pt;
+	}	
+}
+
+void insNode(node **ad_root, int val, node *prt)		// inserts a node in the tree, takes address of root, integer value to be inserted and the parent address of the node at which we are at right now
+{
+	if(search(*ad_root, val) != NULL)				 //search for the element, if same value is alredy in the tree, don't insert
+		return;
+	node *nd; 
+	if(*ad_root==NULL)						// we reached at end point, create a node at end and insert
+	{
+		nd = createNode(val);
+		nd->prt = prt;						// initializing value of the parent of the created node to the input parent
+		*ad_root = nd;					// root gets the value of the created node
+		return;	 
+	}
+	else if((*ad_root)->val>val)					// else if the value is smaller than the current root value
+	{
+		prt = *ad_root;						// initialize parent to value of root and insert at the left
+		insNode(&((*ad_root)->lft), val, prt);
+		return;
+	}
+	else if((*ad_root)->val<val)					// else if the value is greater than the current root value
+	{
+		prt = *ad_root;						// initialize parent to value of root and insert at the right
+		insNode(&((*ad_root)->rgt), val, prt);
+		return;	
+	}
+}
+
+void ppOrder(node *root)			// same as specified above
+{
+	if(root==NULL)
+		return;
+	printf("%d ", root->val);
+	ppOrder(root->lft);
+	ppOrder(root->rgt);
+	return;
+}
+
+void pinOrder(node *root)		// same as specified above
+{
+	if(root==NULL)
+		return;
+	pinOrder(root->lft);
+	printf("%d ", root->val);
+	pinOrder(root->rgt);
+	return;
+}
+
+void pstOrder(node *root)		// same as specified above
+{
+	//printf("%p\n", root);
+	if(root==NULL)
+		return;
+	pstOrder(root->lft);
+	pstOrder(root->rgt);
+	printf("%d ", root->val);
+	return;
+}
+
+node* fMin(node *root)			// function to find the minimum in the tree
+{
+	if(root==NULL)
+		return NULL;		
+	if(root->lft==NULL)		// goes to left untill reach end
+		return root;
+	else 	
+		return fMin(root->lft);
+}
+
+node* fMax(node *root)			// function to find maximum in the tree
+{
+	if(root==NULL)
+		return NULL;
+	if(root->rgt==NULL)		// goes to right untill reach end
+		return root;
+	else
+		return fMax(root->rgt);
+}	
+
+int deleteNode(node *root, int val)			// function to delete a node from the tree
+{
+	node *pt;
+	pt = search(root, val);				// search the value which is to be inserted
+	node *hpt;
+	if(pt==NULL)					// if no such value exists, return -1 (unsuccessful)
+		return -1;
+
+	if(pt->lft==NULL && pt->rgt==NULL)			// if it's both left and right child are not there free it directly
+	{
+		if(pt->prt==NULL)					// means it is a root free it directly
+		{
+			free(pt->prt);
+			free(pt);
+			return 1;
+		}
+		else if(pt->prt->lft==pt)			// else if the searched pointer is left child of it's parent 
+			pt->prt->lft = NULL;			// put it left to be NULL
+		else
+			pt->prt->rgt = NULL;			// else it is the right child of it's parent
+		free(pt);						// free up the pointer
+		return 1;
+	}
+	else if(pt->lft==NULL)					// means it's right is not null
+	{
+		if(pt->prt->lft==pt)				// if the searched pointer is left child of it's parent
+		{
+			pt->prt->lft = pt->rgt;			// put the left of the parent node to the right child of pointer
+			pt->rgt =NULL;
+			free(pt);					// free up the pointer
+			return 1;
+		}
+		else							// else the searched pointer is right child of it's parent
+		{
+			pt->prt->rgt = pt->rgt;			// put the right of the parent node to the right child of pointer
+			pt->rgt =NULL;
+			free(pt);					// free up the pointer
+			return 1;
+		}
+	}
+	else if(pt->rgt==NULL)					// means it's left child is not null
+	{
+		if(pt->prt->lft==pt)				// same as specified above, change is now that parent will take value of the left child of the pointer
+		{
+			pt->prt->lft = pt->lft;
+			pt->lft =NULL;
+			free(pt);
+			return 1;
+		}
+		else
+		{
+			pt->prt->rgt = pt->lft;
+			pt->lft =NULL;
+			free(pt);
+			return 1;		
+		}
+	}
+	else						// means it has both left as well as right child
+	{			
+		hpt = fMin(pt->rgt);		// replace it with it's succesor, which is the minimum in the right subree of the node pointer pt
+		pt->val = hpt->val;		// finding the succesor pointer and swapping their values, now we just need to delete node hpt
+		return deleteNode(hpt, hpt->val);		
+	}
+	
+}
+
+void ffree(node *root)				// function to free up the memory of the root, same as specified above
+{
+	if(root==NULL)
+		return;
+	else if(root->lft==NULL && root->rgt==NULL)
+	{
+		free(root);
+		return;
+	}
+	else if(root->lft==NULL)
+	{
+		ffree(root->rgt);
+		free(root);
+	}
+	else if(root->rgt==NULL)
+	{
+		ffree(root->lft);
+		free(root);
+	}
+	else 
+	{
+		ffree(root->lft);
+		ffree(root->rgt);
+		free(root);
+		return;
+	}
+	return;
+}
+
+int main (int argc, char **argv)
+{
+	char line[128];
+    char v1[15];
+    char v2[15];
+    char v3[15];
+
+	int i=0;
+	node *root;
+	node *pt;
+	root = NULL;
+	while(fgets(line, sizeof(line), stdin)!=NULL)		// taking input 
+	{
+		sscanf(line, "%s %s %s", v1, v2, v3);
+		if(strcmp(v1, "INS")==0)
+		{
+			insNode(&root, stoi(v2), NULL);		// inserting node
+		}		
+		else if(strcmp(v1, "PRE")==0)
+		{
+			ppOrder(root);				// printing preorder
+			printf("\n");
+		}
+		else if(strcmp(v1, "INO")==0)
+		{
+			pinOrder(root);			// printing inorder
+			printf("\n");		
+		}		
+		else if(strcmp(v1, "PST")==0)
+		{
+			pstOrder(root);			// printing post order
+			printf("\n");
+		}
+		else if(strcmp(v1, "DEL")==0)
+		{
+			i = deleteNode(root, stoi(v2));		// deleting node
+			if(i==-1)
+				printf("-1\n");
+		}		
+		else if(strcmp(v1, "SER")==0)
+		{
+			pt = search(root, stoi(v2));		// searching the value in the tree
+			if(pt==NULL)				// if NULL came out, we didn't find it, print N
+				printf("N\n");	
+			else
+				printf("Y\n");			// else we find out, Print Y
+		}
+		else
+			continue;
+	}
+		
+	ffree(root);		// calling fuction to free the tree
+	return 0; 	
+}

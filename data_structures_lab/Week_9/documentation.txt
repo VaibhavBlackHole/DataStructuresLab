@@ -1,0 +1,351 @@
+1. 
+
+#include<stdio.h>
+#include<stdlib.h>
+
+typedef struct node		// node structure for storing the vertex and pointer to the next node
+{
+	int ver;		// vertex 
+	struct node *link;	// link for the next vertex
+}node;
+
+typedef struct queue		// queue for storing the visited vertices
+{
+	int *arr;		// array for storing the values
+	int front, rear;	// front and rear of the queue
+}queue;
+
+typedef struct graph		// structure for the graph
+{				
+	node **head;		// contains array of node *
+	int *vtd;		//int array for storing the visited part of the node
+	int *dtc;		int distance for calculation of the distance of each node from given vertex
+	queue *q;		// one queue for storing the visited nodes
+}graph;
+
+int comparator(const void *p1, const void *p2)		// comparator function for sorting the reachable vertices
+{
+	int a = *((int*)p1);
+	int b = *((int*)p2);
+	return a-b;				// in increasing order, return integer
+}
+
+graph *crGraph(int vtc)			// creates a graph 
+{
+	graph *gr = (graph*)malloc(sizeof(graph));		// memory for the graph
+	gr->head = (node**)malloc(vtc*sizeof(node*));		// memory for the array of nodes
+	gr->vtd = (int*)malloc(vtc*sizeof(int));		// memory for the visited array
+	gr->dtc = (int*)malloc(vtc*sizeof(int));		// memory for the distance array
+	gr->q = (queue*)malloc(sizeof(queue));			// memory for the queue
+	gr->q->arr = (int*)malloc(vtc*sizeof(int));		// memory for the array of the queue of the graph
+	gr->q->front = 0;					// initailizing the front and rear to 0 and -1 respectively
+	gr->q->rear = -1;
+	for(int i=0; i<vtc; i++)			// initializing all the values
+	{
+		gr->vtd[i]=0;				// visited to 0
+		gr->dtc[i]=100000;			// distance to a very big value
+		gr->head[i]=NULL;			// initially all head to be NULL, not pointing to anywhere
+	}
+	return gr;				// return the created Graph
+}
+
+int dq(queue *q)				// operation to take out the integer at the front
+{
+	int ver;	
+	if(q->front>q->rear)			// if queue is already empty return -1
+		return -1;
+	ver = q->arr[q->front];			// else take the front element (vertex) of the queue, increase front and return the vertex
+	q->front = q->front+1;
+	return ver;
+}
+
+void eq(queue* q, int ver)			// fuction to add one integer to the queue
+{
+	q->rear = q->rear+1;			// increasing the rear first, storing the input vertex in the queue
+	q->arr[q->rear]=ver;
+	return;
+}
+
+void addNode(graph *gr, int ver1, int ver2)		// adding the node in the beggining , it only adds at the beggining
+{
+	node *head;			// as we need to find the distance from a specific vertex in the problem, all the vertices at the same level are at the same distance so we do not sort the input vertex
+	node *nd;			// node pointer for forming a node 
+	head = gr->head[ver1];		// getting the head pointer at which we need to add the input vertex ver2
+	nd = (node*)malloc(sizeof(node));	// memory for the node 
+	nd->ver = ver2;			// giving the ver2 to the vertex of node
+	if(head==NULL)
+	{				// if head has no elements, head points to the nd and nd->link =NULL
+		nd->link = NULL;
+		gr->head[ver1]=nd;
+		return;
+	}
+	nd->link = head;		// else nd->link has the pointer at which head is pointing and head is pointed to the nd
+	gr->head[ver1] = nd;
+	return;
+}
+
+void bfs(graph *gr, int ver, int dtc)		// breadth first search, takes the input vertex ver at which we need to start the search 
+{	
+	node *head;			// pointer which stores the address of the dequed visited vertex
+	int u,v;
+	gr->dtc[ver]=0;
+	gr->vtd[ver]=1;
+	eq(gr->q, ver);			// enqued the input vertex and make it visited
+	while(1)
+	{
+		u = dq(gr->q);		// deque the visited element and see it's all the adjacent vertices that are not yet visited
+		if(u==-1)		// if queue is empty come out of the loop
+			break;
+		head = 	gr->head[u];	// else we go to the head pointer of the visited vertex
+		while(head!=NULL)	// untill head is not NULL (reach to the end)
+		{
+			v = head->ver;			// has the vertex of the head pointer
+			if(gr->vtd[v]==0)		// if v is not visited
+			{
+				gr->vtd[v]=1;		// make it visited, enque it to the queue and it's distance is distance of it's parent from vertex ver + 1
+				eq(gr->q, v);
+				gr->dtc[v]=gr->dtc[u]+1;
+			}
+			head=head->link;		// head goes to it's link
+		}
+	}
+	return;
+}
+
+int main()
+{
+	graph *gr;		
+	int k;
+	int vtc, ver, dtc, ver1, ver2;
+	scanf("%d%d%d", &vtc, &ver, &dtc);		// scanning the three values, no of vertices , starting vertex of the bfs and distance at most of which we need to find the vertices from vertex ver 
+	gr = crGraph(vtc);
+	while(scanf("%d %d", &ver1, &ver2)!=EOF)		// scanning untill file is empty
+	{
+		addNode(gr, ver1, ver2);			// undirected graph
+		addNode(gr, ver2, ver1);		
+	}
+	bfs(gr, ver, dtc);			// running the bfs
+	int *arr=(int*)malloc(dtc*sizeof(int));		// array for sorting the vertices
+	for(int i=0; i<vtc; i++)
+	{
+		// we calculate all the distances of the given input vertex from rest of the nodes. Then we compare it with the given input maximum distance, If it is less than or equal to it store it into the array and sort the array.
+		if(gr->dtc[i]<=dtc)
+		{	
+			arr[k]=i;
+			k++;
+		}
+	}
+	qsort((void*)arr, k, sizeof(int), comparator);		// sorting the array
+	for(int i=0; i<k; i++)
+	{
+		printf("%d ", arr[i]);			// printing the array in sorted manner
+	}
+	printf("\n");
+	return 0;
+}		
+
+bfs takes O(n) time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int n=0;
+
+void preorder(int *arr, int ind, int n)		// function for printing the preorder of the array, n is the size of the array
+{
+	if(ind>=n)				// base case for coming out of the recursive call
+		return;				// if input index is greater than the size of the array come back (return)
+	printf("%d ", arr[ind]);		// print parent then print left child and then print right child
+	preorder(arr, 2*ind+1, n);		// 2*i +1 is the left child, 2*i+2 is the right child
+	preorder(arr, 2*ind+2, n);
+	return;
+}
+
+void postorder(int *arr, int ind, int n)	// function for printing the postorder of the array
+{
+	if(ind>=n)				// same base condition to come out of the recursive call
+		return;
+	postorder(arr, 2*ind+1, n);		// print left child print right child and then the parent
+	postorder(arr, 2*ind+2, n);
+	printf("%d ", arr[ind]);
+	return;
+}
+
+void inorder(int *arr, int ind, int n)		// function for printing the inorder of the array
+{
+	if(ind>=n)				// same base condition to come out of the recursive call
+		return;
+	inorder(arr, 2*ind+1, n);		// print left child , print parent and then print right child
+	printf("%d ", arr[ind]);
+	inorder(arr, 2*ind+2, n);
+	return;
+}
+
+int main()
+{
+	int vtc,i=0;
+	int *ver;
+	ver = (int*)malloc(200*sizeof(int));		// creating the integer array to store the vertices of the tree in level ordered manner
+	scanf("%d\n", &vtc);				// scanning the number of vertices
+	//printf("%d", vtc);
+	for(int j=0; j<vtc; j++)	
+	{
+		scanf("%d\n", &ver[j]);			// scanning all the vertices
+		n++;
+		
+	}
+	
+	inorder(ver, 0, n);			// printing the inorder
+	printf("\n");				
+	preorder(ver, 0, n);			// printing the preorder
+	printf("\n");
+	postorder(ver, 0, n);			// printing the postorder
+	printf("\n");
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+typedef struct node		// struct node which has one character, one link to the left child and one link to the right child of the tree
+{
+	char c;
+	struct node *left , *right;
+}node;
+
+typedef struct stack		// stack to store the tree data as it grows
+{
+	node **node;		// array of the nodes 
+	int top;		// integer to store the top of the stack
+}stack;
+
+stack *crStack(int l)		// creating a stack 
+{
+	stack *st = (stack*)malloc(sizeof(stack));	// memory to the stack
+	st->node = (node**)malloc(l*sizeof(node*));	// memory to the array of nodes of the stack
+	st->top =-1;			// initializing top of stack to -1
+	return st;			// returning poiter of the stack created
+}
+
+node *crNode(node *opd1 , node *opd2, char c)		// create one node with left address is operand1 , right address is operand2 and character of parent is exp[i] (character operator)
+{
+	node *nd;
+	nd = (node*)malloc(sizeof(node));		// node creation
+	nd->left = opd2;			// left to operand2
+	nd->right = opd1;			// right to operand1
+	nd->c = c;				// parent character
+	return nd;
+}
+
+int isOperator(char c)				// check if input character is an operator
+{
+	if(c=='+' || c=='-' || c=='*' || c=='/')
+		return 1;
+	return -1;
+}
+
+node *pop(stack *st)			// pop the last node in the stack
+{	
+	node *nd;
+	nd = st->node[st->top];
+	st->top = st->top-1;			// decreasing top 
+	return nd;
+}
+
+void push(stack *st, node *nd)			// adding one node to the stack
+{
+	st->top=st->top+1;			// increasing the top 
+	st->node[st->top]=nd;			// storing the node to the stack at the top
+	(st->node[st->top])->left = nd->left;		// left of node to the left of the node at the top
+	(st->node[st->top])->right = nd->right;		// right of node to the right of the node at the top
+	return;
+}
+
+void inorder(node* nd)			// printing in the inorder of the tree created
+{
+	if(nd==NULL)			// if reached an end return
+		return;
+	inorder(nd->left);		// print left child, print parent and then right child
+	printf("%c", nd->c);
+	inorder(nd->right);
+	return;
+}
+
+int main()
+{
+	char *exp;
+	int l;
+	node *opd1, *opd2, *nd;			// three node*
+	stack *st;				// stack *
+	exp = (char*)malloc(100*sizeof(char));	
+	scanf("%s", exp);			// scanning the expression
+	l = strlen(exp);			// length of the input expression
+	st = crStack(l);			// creating stack 
+	for(int i=0; i<l; i++)
+	{
+		if(isOperator(exp[i])==1)		// if character is an operator
+		{
+			opd1 = pop(st);			// then pop the two elements (nodes)
+			opd2 = pop(st);			
+			nd = crNode(opd1, opd2, exp[i]);	
+			push(st, nd);			// push the created node on to the stack
+			
+		}
+		else				// else if it is an operand then push it on the stack
+		{
+			nd = crNode(NULL, NULL, exp[i]);		// creating one node with left address and right address to be NULL, character to be exp[i] (operand)
+			push(st, nd);					// push the operand
+		}
+	}
+	inorder(st->node[0]);		// print the inorder
+	return 0;
+}

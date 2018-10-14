@@ -1,0 +1,920 @@
+1.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int stoi(char *str)				// string to integer
+{
+	int x;
+	sscanf(str, "%d", &x);
+	return x;
+}
+
+typedef struct node				// structure for the node
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Graph				// structure for graph
+{
+	node **head;
+	int *visited;
+}Graph;
+
+void addNode(node **ad_head, int ver)		// adds the node in the sorted order
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));		// memory for the node to be added
+	nd->data = ver;
+	if(head==NULL)					// means add node at the first
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else						
+	{
+		while(head->link!=NULL && ver>((head->link)->data))		// else means list is not empty
+		{								// go untill our input vertex is not smaller than one element in the list or untill head->list is empty
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)				// now if head is empty && our vertex is also smaller than the last element in the list 
+		{
+			nd->link = head;					// add the head address to the link of the node inserted
+			if(prev!=NULL)
+				prev->link=nd;					// if previous is not pointing to null, directly head points to the nd
+			else							// else we need to add the node at the first position
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else								// else our vertex input is smaller than the one vertex in the input list
+		{								// head points to the link and link points the old node address which head had 
+			nd->link = head->link;
+			head->link=nd;
+		}	
+		return;
+	}
+}
+
+Graph *CrGraph(int vtc)								// creating space for the graph
+{
+	Graph *gr;
+	gr = (Graph*)malloc(sizeof(Graph));
+	gr->head = (node**)malloc(vtc*sizeof(node*));					// array of node *. Each node is a linked list
+
+	for(int i=0; i<vtc; i++)
+		gr->head[i]=NULL;						// no need of visited here
+
+	return gr; 
+}
+
+void displayList(Graph* gr, int vtc)					// display of the list
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		head=gr->head[i];					// shows the elements in the ith linked list
+		if(head==NULL)						// if it has no adjacent nodes connected to it 
+			printf("$\n");					// print $
+		
+		else if(head!=NULL)						// else print untill the head became null
+		{ 
+			while(head->link!=NULL)
+			{
+				printf("%d$", head->data);
+				head=head->link;
+			}
+			if(head->link==NULL)
+				printf("%d$\n", head->data);	
+		}	
+				
+	}
+	return;
+}
+
+void frf(node *head)				// recursive function to free up the linked lists
+{		
+	if(head==NULL)				// it has no element to free up, already empty
+		return;
+	if(head->link==NULL)			// // it has reached the last node, the free it
+	{
+		free(head);
+		return;
+	}
+	else						// else go to the last node, do not free untill last node is reached
+	{
+		frf(head->link);
+		free(head);
+	}
+}
+
+int main()
+{
+	char line[128];
+	int lineNo=0;
+	char v1[10], v2[10];
+	int vtc, ver1, ver2;
+	Graph *gr;
+	while(fgets(line, sizeof line, stdin)!=NULL)			// scanning from the file untill file is empty
+	{
+		sscanf(line, "%s %s", v1, v2);				// taking out two strings from the input line
+		lineNo++;
+		if(lineNo==1)						// first line gives the no of vertices
+		{
+			vtc = stoi(v1);
+			gr = CrGraph(vtc);
+				
+		}
+		else			
+		{
+			ver1 = stoi(v1);
+			ver2 = stoi(v2);
+			addNode(&(gr->head[ver1]), ver2);		// now add the input node ver2 in the corresponding linked list
+		} 
+	}
+	displayList(gr, vtc);						// now display the adjacency list
+	
+	for(int i=0; i<vtc; i++)					// free up the memory of all the linked list formed
+		frf(gr->head[i]);
+	
+	free(gr->head);							// free up the node** head
+	free(gr);							// free up the graph
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int flag =0;				// global variable
+
+typedef struct Dval			// structure for swapping two values according to the way we want
+{
+	int u, v;
+}Dval;
+Dval edg[200];					// array of the structure, 200 is random, it is just total no of vertices we have in the program
+
+
+typedef struct node				// same as specified above	
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Graph				// same as specified above	
+{
+	node **head;
+	int *visited;
+}Graph;
+
+int stoi(char *str)				// same as specified above	 
+{
+	int x;
+	sscanf(str, "%d", &x);
+	return x;
+}
+
+int comparator(const void *p, const void *q)		// comparator function for the qsort we used below in the main function
+{
+	int p1, p2;
+	p1 = ((Dval*)p)->u;
+	p2 = ((Dval*)q)->u;
+	return p1-p2;					// just subtraction of the elements of the first index
+}
+
+void addNode(node **ad_head, int ver)					// same as specified above	
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));
+	nd->data = ver;
+	if(head==NULL)
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>((head->link)->data))
+		{
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)
+		{
+			nd->link = head;
+			if(prev!=NULL)
+				prev->link=nd;
+			else
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else
+		{	
+			nd->link = head->link;
+			head->link=nd;
+		}	
+		return;
+	}
+}
+
+Graph *CrGraph(int vtc)				// memory for the graph
+{
+	Graph *gr;
+	gr = (Graph*)malloc(sizeof(Graph));
+	
+
+	gr->head = (node**)malloc(vtc*sizeof(node*));		// array of node* (array of linked lists)
+	for(int i=0; i<vtc; i++)
+		gr->head[i]=NULL;
+
+	gr->visited = (int*)malloc(vtc*sizeof(int));			// here in dfs we need the visited array, initializing it to zero (not visited yet)
+	for(int i=0; i<vtc; i++)
+		gr->visited[i]=0;	
+
+	return gr; 
+}
+
+void explore(Graph *gr, node *head, int i)				// function for exploring the node. 
+{
+	int data;
+	if(head==NULL)				// if we reached an end point backtrack
+	{
+		return;
+	}
+
+	while(head!=NULL)			// else continuing go into the depth
+	{
+		data = head->data;
+		if(gr->visited[data]==0)			// if vertex is not visited , then make it visited and explore
+		{
+			//printf("%d,%d\n", i,data);
+			(edg[flag]).u = i;			// as we need to sort the explored vertices in increasing order, we have taken i and data in the structure
+			(edg[flag]).v = data;
+			flag++;					// variable for keeping track of no of elements in the structure edg
+			gr->visited[data]=1;			// making the node visited
+			explore(gr, gr->head[data], data);			
+		}
+		
+			head=head->link;			// going forward if the node is already visited or else otherwise
+	}
+	return;
+}
+
+void dfs(Graph *gr, int vtc)				// if there is a forest then dfs will make that visited also
+{
+	for(int i=0; i<vtc; i++)			// exploring all the vertices
+	{
+		if(gr->visited[i]==0)			// starting with zero and checking if it is visited or not
+		{
+			gr->visited[i]=1;		// if not make it visited and then explore it
+			explore(gr, gr->head[i],i);
+		}
+	}
+	return;
+}
+
+void displayList(Graph* gr, int vtc)			// same as specified above	
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		
+		head=gr->head[i];
+		if(head==NULL)
+			printf("$\n");
+		
+		else if(head!=NULL)
+		{ 
+			while(head->link!=NULL)
+			{
+				printf("%d$", head->data);
+				head=head->link;
+			}
+			if(head->link==NULL)
+				printf("%d$\n", head->data);	
+		}	
+				
+	}
+	return;
+}
+
+void frf(node *head)		// same as specified above	
+{
+	if(head==NULL)
+		return;
+	if(head->link==NULL)
+	{
+		free(head);
+		return;
+	}
+	else
+	{
+		frf(head->link);
+		free(head);
+	}
+}
+
+int main()
+{
+	char line[128];
+	int lineNo=0;
+	char v1[10], v2[10];
+	int vtc, ver1, ver2;
+	Graph *gr;
+	while(fgets(line, sizeof line, stdin)!=NULL)		// same as specified above	
+	{
+		sscanf(line, "%s %s", v1, v2);
+		lineNo++;
+		if(lineNo==1)
+		{
+			vtc = stoi(v1);				// same as specified above	
+			gr = CrGraph(vtc);				// same as specified above	
+				
+		}
+		else
+		{
+			ver1 = stoi(v1);					// same as specified above	
+			ver2 = stoi(v2);
+			addNode(&(gr->head[ver1]), ver2);
+		} 
+	}
+	//displayList(gr, vtc);
+	dfs(gr, vtc);						// running dfs 
+	qsort((void*)edg, flag, sizeof(Dval), comparator);		// sorting according to the first index of edg structure
+	for(int i=0; i<flag; i++)
+	{	
+		printf("(%d,%d)\n", (edg[i]).u, (edg[i]).v);				// printing the elements in the structure
+	}
+	for(int i=0; i<vtc; i++)				// same as specified above	
+		frf(gr->head[i]);			
+	
+	free(gr->head);						// same as specified above	
+	free(gr->visited);					// free up memory of visited
+	free(gr);							// same as specified above	
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int time=0;			// time global variable
+
+int stoi(char *str)			// same as specified above
+{
+	int x;
+	sscanf(str, "%d", &x);
+	return x;
+}
+
+
+typedef struct node				// same as specified above
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Graph			// graph structure , it has node** (array of node, array of linked list) , visited array for checking the visited part. 
+{					
+	node **head;
+	int *visited;
+	int *stime;			// two arrays for starting and ending time for each vertex of the graph
+	int *etime;
+}Graph;
+
+void addNode(node **ad_head, int ver)		// same as specified above
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));
+	nd->data = ver;
+	if(head==NULL)
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>((head->link)->data))
+		{
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)
+		{
+			nd->link = head;
+			if(prev!=NULL)
+				prev->link=nd;
+			else
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else
+		{	
+			nd->link = head->link;
+			head->link=nd;
+		}
+		return;
+	}
+}
+
+Graph *CrGraph(int vtc)			// creating memory for the graph , takes no of verices as input
+{
+	Graph *gr;
+	gr = (Graph*)malloc(sizeof(Graph));		// graph *
+	
+
+	gr->head = (node**)malloc(vtc*sizeof(node*));		// array of node*, array of linked list
+	for(int i=0; i<vtc; i++)
+		gr->head[i]=NULL;				// initializing each head of the linked list to NULL
+
+	gr->visited = (int*)malloc(vtc*sizeof(int));		// memory for the visited array
+	for(int i=0; i<vtc; i++)
+		gr->visited[i]=0;
+
+	gr->stime = (int*)malloc(vtc*sizeof(int));		// memory for the starting time , initialize to zero
+	for(int i=0; i<vtc; i++)
+		gr->stime[i]=0;
+
+	gr->etime = (int*)malloc(vtc*sizeof(int));		// memory for the ending time , initiaze to a very big no. (it will help to detect cycle in the graph)
+	for(int i=0; i<vtc; i++)
+		gr->etime[i]=1000000;	
+
+	return gr; 
+}
+
+void explore(Graph *gr, node *head, int i)		
+{
+	int data;
+	if(head==NULL)			// as soon as we reach an end , we got it's start time, end time will be evaluated after it comes out , after it's exploration
+	{	
+		gr->stime[i]=time;
+		return;
+	}
+
+	while(head!=NULL)		// if we have some elements left unvisited , visit them
+	{	
+		data = head->data;
+		if(gr->visited[data]==0)		// if unvisited
+		{
+			//printf("%d,%d\n", i,data);	
+			time++;				// we see a new fresh vertex, we increase time and give that time to the starting time of the vertex
+			gr->stime[data]=time;
+			gr->visited[data]=1;		// make that vertex as visited
+			explore(gr, gr->head[data], data);			// exploring the vertex
+			time++;				// after we are done exploring any vertex we increase the time and put that time into the end time of that vertex
+			gr->etime[data]=time;
+						
+		}
+		else
+			head=head->link;		// same as specified above
+	}
+	return;
+}
+
+void dfs(Graph *gr, int vtc)			// same as specified above
+{
+	for(int i=0; i<vtc; i++)
+	{
+		if(gr->visited[i]==0)
+		{
+			time++;			// same as specified above
+			gr->stime[i]=time;
+			gr->visited[i]=1;
+			
+			explore(gr, gr->head[i],i);
+			time++;
+			gr->etime[i]=time;
+		}
+	}
+	return;
+}
+
+void displayList(Graph* gr, int vtc)			// same as specified above
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		head=gr->head[i];
+		if(head==NULL)
+			printf("$\n");
+		
+		else if(head!=NULL)
+		{ 
+			while(head->link!=NULL)
+			{
+				printf("%d$", head->data);
+				head=head->link;
+			}
+			if(head->link==NULL)
+				printf("%d$\n", head->data);	
+		}				
+	}
+	return;
+}
+
+void displayTime(Graph *gr, int vtc)			// display the time of the vetices
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		printf("%d/%d\n",gr->stime[i], gr->etime[i]);			
+	}
+	return;
+}
+
+void frf(node *head)			// same as specified above
+{
+	if(head==NULL)
+		return;
+	if(head->link==NULL)
+	{
+		free(head);
+		return;
+	}
+	else
+	{
+		frf(head->link);
+		free(head);
+	}
+}
+
+int main()
+{
+	char line[128];
+	int lineNo=0;
+	char v1[10], v2[10];
+	int vtc, ver1, ver2;
+	Graph *gr;
+	while(fgets(line, sizeof line, stdin)!=NULL)	// same as specified above
+	{
+		sscanf(line, "%s %s", v1, v2);
+		lineNo++;
+		if(lineNo==1)				// same as specified above
+		{
+			vtc = stoi(v1);
+			gr = CrGraph(vtc);
+				
+		}
+		else
+		{
+			ver1 = stoi(v1);
+			ver2 = stoi(v2);
+			addNode(&(gr->head[ver1]), ver2);		// same as specified above
+		} 
+	}
+	//displayList(gr, vtc);
+	dfs(gr, vtc);						// same as specified above
+	displayTime(gr, vtc);	
+
+	for(int i=0; i<vtc; i++)			// same as specified above
+		frf(gr->head[i]);
+	
+	free(gr->head);		 freeing up all the allocated memory of the graph
+	free(gr->visited);
+	free(gr->stime);
+	free(gr->etime);
+	free(gr);
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.
+
+#include<stdio.h>
+#include<stdlib.h>
+
+int time=0;		// global variable
+
+int flag=0;		// global variable
+
+int stoi(char *str)		// same as specified above
+{
+	int x;
+	sscanf(str, "%d", &x);
+	return x;
+}
+
+typedef struct Dval		structure for storing the vertex and it's its ending time
+{
+	int ver, tm;
+}Dval;		
+
+Dval det[200];			// array of the structure above
+
+typedef struct node		// same as specified above
+{
+	int data;
+	struct node *link;
+}node;
+
+typedef struct Graph			// same as specified above
+{
+	node **head;
+	int *visited;
+	int *stime;
+	int *etime;
+}Graph;
+
+int comparator(const void *p1, const void *p2)		// comparator for the sorting according end timing of the vertices, decreasing time
+{
+	int v1, v2;
+	v1 = ((Dval*)p1)->tm;
+	v2 = ((Dval*)p2)->tm;
+	return v2-v1;
+}
+
+void addNode(node **ad_head, int ver)		// same as specified above
+{
+	
+	node *nd;
+	node *head;
+	node *prev=NULL;
+	head = *ad_head;
+	nd = (node*)malloc(sizeof(node));
+	nd->data = ver;
+	if(head==NULL)
+	{
+		nd->link = NULL;
+		*ad_head = nd;
+		return;
+	}
+	else
+	{
+		while(head->link!=NULL && ver>((head->link)->data))
+		{
+			prev = head;
+			head= head->link;
+		}		
+		
+		if(head->link==NULL && ver<head->data)
+		{
+			nd->link = head;
+			if(prev!=NULL)
+				prev->link=nd;
+			else
+			{
+				nd->link=*ad_head;
+				*ad_head=nd;
+			}
+		}
+		else
+		{
+			nd->link = head->link;
+			head->link=nd;
+		}
+		return;
+	}
+}
+
+Graph *CrGraph(int vtc)			// same as specified above
+{
+	Graph *gr;
+	gr = (Graph*)malloc(sizeof(Graph));
+	
+
+	gr->head = (node**)malloc(vtc*sizeof(node*));
+	for(int i=0; i<vtc; i++)
+		gr->head[i]=NULL;
+
+	gr->visited = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		gr->visited[i]=0;
+
+	gr->stime = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		gr->stime[i]=0;
+
+	gr->etime = (int*)malloc(vtc*sizeof(int));
+	for(int i=0; i<vtc; i++)
+		gr->etime[i]=1000000;				// it helps in finding the backedge in the graph
+
+	return gr; 
+}
+
+void explore(Graph *gr, node *head, int i)		// exploring the vertices
+{
+	int data;			
+	if(head==NULL)
+	{
+		gr->stime[i]=time;
+		return;
+	}
+
+	while(head!=NULL)
+	{
+		data = head->data;
+		if(gr->visited[data]==0)			// AS soon as we see a new fresh vertex, we initialize it's time. We increment current time. stime = time. For that fresh vertex
+		{
+			time++;
+			gr->stime[data]=time;
+			gr->visited[data]=1;
+			explore(gr, gr->head[data], data);			
+			time++;
+			gr->etime[data]=time;			// whenever we have completed exploring any vertex then we increment current time . etime = time. For that vertex which has been explored
+						
+		}
+		else 						// means a vertex has already been visited before but it's end time is not yet specified. (Means there is a cycle)
+		{
+			if(gr->etime[data]==1000000)			//		1-------2
+				flag=-1;				//		|	|	// 1 has not been completed, but visited, at 4 (1 is visited but end time is still 1000000) 
+			head=head->link;				//		4-------3
+		}
+	}
+	return;
+}
+
+void dfs(Graph *gr, int vtc)				// dfs for the graph
+{
+	for(int i=0; i<vtc; i++)
+	{
+		if(gr->visited[i]==0)
+		{
+			time++;
+			gr->stime[i]=time;
+			gr->visited[i]=1;
+			explore(gr, gr->head[i],i);
+			time++;
+			gr->etime[i]=time;
+		}
+		else					// same as specified above for detecting the cycle
+		{	
+			if(gr->etime[i]==1000000)
+				flag=-1;			// means we have identified a cycle
+		}
+	}
+	
+	return;
+}
+
+void displayList(Graph* gr, int vtc)			// same as specified above
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		head=gr->head[i];
+
+		if(head==NULL)
+			printf("$\n");
+		
+		else if(head!=NULL)
+		{ 
+			while(head->link!=NULL)
+			{
+				printf("%d$", head->data);
+				head=head->link;
+			}
+			if(head->link==NULL)
+				printf("%d$\n", head->data);	
+		}	
+				
+	}
+	return;
+}
+
+void displayTime(Graph *gr, int vtc)			// same as specified above
+{
+	node *head;
+	for(int i=0; i<vtc; i++)
+	{
+		printf("%d/%d\n",gr->stime[i], gr->etime[i]);			
+	}
+	return;
+}
+
+void frf(node *head)			// same as specified above
+{
+	if(head==NULL)
+		return;
+	if(head->link==NULL)
+	{
+		free(head);
+		return;
+	}
+	else
+	{
+		frf(head->link);
+		free(head);
+	}
+}
+
+int main()
+{
+	char line[128];
+	int lineNo=0;
+	char v1[10], v2[10];
+	int vtc, ver1, ver2;
+	Graph *gr;
+	while(fgets(line, sizeof line, stdin)!=NULL)		// same as specified above
+	{
+		sscanf(line, "%s %s", v1, v2);
+		lineNo++;
+		if(lineNo==1)
+		{
+			vtc = stoi(v1);
+			gr = CrGraph(vtc);			// same as specified above
+				
+		}
+		else
+		{
+			ver1 = stoi(v1);
+			ver2 = stoi(v2);
+			
+			addNode(&(gr->head[ver1]), ver2);	// same as specified above
+		} 
+	}
+	//displayList(gr, vtc);
+	dfs(gr, vtc);				
+	//displayTime(gr, vtc);	
+	if(flag==-1)					// if flag is -1 means we have identified a cycle
+		printf("-1\n");
+	
+	else						// else if there is no cycle , then sort according to the end time for the topological order of the graph
+	{
+		for(int i=0; i<vtc; i++)			// topological order means , we need to print the prerequisite first. Which has largest end time. Like for a Data Structure and Algorithm course
+		{				// we need to do Introduction to Programming Course first. So First one is prerequisite for the second one.
+			det[i].ver=i;
+			det[i].tm=gr->etime[i];
+		}	
+		
+		qsort((void*)det, vtc, sizeof(Dval), comparator);		// for sorting according to the end time, decreasing time
+	
+		for(int i=0; i<vtc; i++)
+			printf("%d ", det[i].ver);			// the one with the largest time is printed first
+		printf("\n");	
+	}
+	
+	
+
+	for(int i=0; i<vtc; i++)			// same as specified above
+		frf(gr->head[i]);
+	
+	free(gr->head);		<---------------------------------------|
+	free(gr->visited);						|
+	free(gr->stime);					// same as specified above
+	free(gr->etime);						|	
+	free(gr);		<---------------------------------------|
+	return 0;
+}
