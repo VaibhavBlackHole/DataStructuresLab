@@ -1,0 +1,468 @@
+1. // Program for revies of binary search tree
+
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+typedef struct node				// structure for the node
+{
+	int val;				// contains value which to be stored, address of parent node, address of left node and address of right node
+	struct node *prt;
+	struct node *lft;
+	struct node *rgt;
+}node;
+
+int stoi(char *str)			// function to convert string to integer
+{
+	int x;
+	sscanf(str, "%d", &x);	
+	return x;
+}
+
+node *crNode(int val)			// function to create node. 
+{
+	node *nd;
+	nd = (node*)malloc(sizeof(node));			// created node has no left child and right child, so it is initialized to zero
+	nd->lft = NULL;
+	nd->rgt = NULL;
+	nd->val = val;
+	return nd;
+}
+
+node *search(node *head, int val)			// function to search a interger value (returns node which has same value as that of input val)
+{
+	if(head==NULL)				// if reached an end return NULL (means value not found)
+		return NULL;
+	if(head->val==val)			// if found return head (node that contains the searched value val)
+		return head;
+	else if (val>head->val)					// if value is greater than the current head->value then search on the right of it
+		return search(head->rgt, val);
+	else 								// else search on the left node of the head
+		return search(head->lft, val);
+}
+
+void insert(node **ad_root, node *prt, int val)		// function for inserting the integer value val. It takes address of the each node and its parent also 
+{
+	node *head;
+	node *sp;			
+	node *nd;
+
+	head = *ad_root;
+	sp = search(head, val);			// as we need to add only distinct values, if the same element is already in the tree, no need to add
+	if(sp!=NULL)				// if search pointer sp is not NULL (already present) return
+		return;
+	
+	if(head==NULL)				// means we have got end, add the node here
+	{
+		//printf("here for value %d\n", val);
+		nd = crNode(val);			// create a node
+		nd->prt = prt;			// store the parent of the node 
+		*ad_root=nd;			// now store the created node in the empty root (now we have got a new node in the tree)
+		return;
+	}
+	else if(val>head->val)			// means the value is greater than the current head value
+	{
+		prt = head;				// store current head as parent, call the insert function on the right of the current node with the new parent 
+		insert(&((*ad_root)->rgt), prt, val);
+	}
+	else 						// else value is smaller than the current head value 
+	{
+		prt = head;				// call function on the left  while storing the parent
+		insert((&(*ad_root)->lft), prt, val);
+	}
+	return;
+}
+
+node *findmax(node *head)			// function to find the maximum in the tree (returns the pointer of the node which has maximum value)
+{
+	if(head==NULL)				// means the tree is empty
+		return NULL;			// return NULL
+	
+	while(head->rgt!=NULL)			// go right until we reach node which has no right element, now return that node 
+		head=head->rgt;
+	return head;
+}
+
+node *findmin(node *head)			// function to find min in the tree (returns the pointer of the node which has the minimum value)
+{
+	if(head==NULL)				// means the tree is empty
+		return NULL;		// return NULL
+	while(head->lft!=NULL)			// go left until we reach node which has no left element, now return that node 
+		head = head->lft;
+	return head;
+}
+
+void postOrder(node *head)		// function to print in the post order 
+{
+	if(head==NULL)			// if reached an end return
+		return;
+	//printf("here for %d ppst order\n", head->val);
+	postOrder(head->lft);		// go to left , then go right and then print the element itself 
+	postOrder(head->rgt);
+	printf("%d ", head->val);
+	return;
+}
+
+int delete(node **ad_root, int val)		// function to delete the node, takes address of the root and the integer value to be deleted
+{
+	node *head;
+	node *hp;
+	
+	head = *ad_root;
+	head = search(head, val);		// first search the element, if element is not there return -1 (did not delete as element is not there)
+	if(head==NULL)
+		return -1;
+	
+	if(head->lft==NULL && head->rgt==NULL)		// if the found node is the leaf
+	{
+		if(head->prt==NULL)			// means it is the root (as it has no parent)
+		{
+			*ad_root=NULL;			// just free the root
+			free(*ad_root);
+			return 1;
+		}
+		else if(head->prt->lft==head)		// if it is not root and it is left child of it's parent 
+		{
+			head->prt->lft=NULL;		// store NULL to the left of it's parent
+			free(head);				// free the head
+			return 1;
+		}
+		else 						// else it is right child of it's parent
+		{
+			head->prt->rgt=NULL;		// store NULL to the right of it's parent
+			free(head);				// free the head
+			return 1;
+		}
+	}
+	else if(head->rgt==NULL)			// means it has only one left child
+	{
+		if(head->prt==NULL)			// if it is a root
+		{
+			*ad_root=head->lft;		// store left of head as the new root
+			(*ad_root)->prt=NULL;		// root has no parent 
+			free(head);				// free the old root
+		}
+		else if(head->prt->lft==head)		// if it the left child of it's parent is the head
+		{
+			head->prt->lft=head->lft;	// store the left of the head in the left of it's parent
+			head->lft->prt = head->prt;	// store the parent of the current head as the parent of the left of the head 
+			head->lft=NULL;			// make left of head to be NULL
+			free(head);				// free head
+			return 1;
+		}
+		else				// it is the right child of it's parent 
+		{
+			head->prt->rgt=head->lft;	// store the left of the head in the right of it's parent
+			head->lft->prt=head->prt;	// store the parent of the current head as the parent of the left of the head 
+			head->lft=NULL;			// make left of head to be NULL
+			free(head);				// free head
+			return 1;
+		}
+	}
+	else if(head->lft==NULL)			// means it has only one right child
+	{
+		if(head->prt==NULL)			// if is the root
+		{
+			*ad_root=head->rgt;		// store the right of the head as new root
+			(*ad_root)->prt=NULL;		// root has no parent
+			free(head);				// free the old root
+		}
+		else if(head->prt->lft==head)			// if it is the left child of it's parent
+		{
+			head->prt->lft=head->rgt;		// store the right of the head in the left of it's parent
+			head->rgt->prt = head->prt;		// store the parent of the current head as the parent of the right of the head
+			head->rgt=NULL;				// make right the head to be NULL 
+			free(head);				// free the head
+			return 1;
+		}
+		else						// it is the right child of it's parent
+		{
+			head->prt->rgt=head->rgt;		// store the right the head in the right of it's parent
+			head->rgt->prt = head->prt;		// store the parent of the head as the parent of the right of the head
+			head->rgt = NULL;				// make right of head to be NULL
+			free(head);					// free head
+			return 1;
+		}
+	}
+	else					// means it has both left as well as right child
+	{
+		hp = findmax(head->lft);	// find the node of it's predecessor (largest element in the left tree of the node)
+		head->val=hp->val;		// replace the value of the current head value with the predecessor value   
+		delete(&hp, hp->val);		// now delete the predecessor
+	}
+	return 1;
+}
+
+int main()
+{
+	char line[127];
+	char v1[15];
+	char v2[15];
+	node *root;
+	root=NULL;
+	node *pt; 
+	int i;
+
+	while(fgets(line, sizeof line, stdin)!=NULL)
+	{
+		sscanf(line, "%s %s", v1, v2);			// scans the input as two strings
+		if(strcmp(v1, "MAX")==0)
+		{
+			pt = findmax(root);			// call the max function
+			if(pt==NULL)			// it didn't find any max
+				printf("-1\n");
+			else
+				printf("%d\n", pt->val); 		// else print the max value
+		}
+		else if(strcmp(v1, "MIN")==0)				
+		{
+			pt = findmin(root);				// call the min function
+			if(pt==NULL)				// it didn't find any min 
+				printf("-1\n"); 
+			else
+				printf("%d\n", pt->val); 		// else print the min
+		}
+		else if(strcmp(v1, "DEL")==0)
+		{
+			if(stoi(v2)<0)			 //if the integer to be deleted is negative print -1
+				i=-1;
+			else
+				i = delete(&root, stoi(v2));		
+			if(i==-1)						// if did not delete
+				printf("-1\n");
+		}
+		else if(strcmp(v1, "INS")==0)			
+		{
+			if(stoi(v2)>=0)				// if the value to be inserted is >=0 insert 
+				insert(&root, NULL, stoi(v2));
+		}
+		else if(strcmp(v1, "PST")==0)
+		{
+			if(root==NULL)				// if no element (empty tree)
+				printf("-1\n");
+			else
+			{ 
+				postOrder(root);		// else print the post order
+				printf("\n");
+			}		
+		}
+		else 
+			continue;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.	// Program to use hashing as chaining method (function used is h(x)= x%m)
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+int m;			// global variable m
+
+typedef struct node			// structure node
+{
+	int no;			// has the integer value and address to it's next node
+	struct node *next;
+}node;
+
+node *search(node **table, int no)			// function to search
+{
+	int hval;
+	node *head;
+	
+	hval = no%m;					// find hash value
+	head=table[hval];					// go to that linked list
+	if(head==NULL)					// if linked list is empty
+		return NULL;
+	else if (head->no==no)				// if value is matched with the current head value
+		return head;
+	
+	while(head->next!=NULL)				// else go until the end
+	{
+		if(head->next->no==no)				// if found return the address of the node
+			return head->next;
+		head=head->next;
+	}
+	return NULL;					// not found
+}
+
+
+int insert(node **table, int no)			// function to insert
+{
+	int hval;		
+	node *head;
+	node *sp;
+	node *nd;
+	
+	hval = no%m;
+	head = table[hval];				// hash value, head goes to the corresponding linked list
+
+	sp = search(table, no);				// search if already present don't insert
+	if(sp!=NULL)
+		return -1;
+	
+	nd = (node*)malloc(sizeof(node));		
+	nd->no = no;	
+
+	if(head==NULL)					// if list is empty
+	{
+		nd->next = NULL;
+		table[hval]=nd;				// fill the list 
+		return 1;
+	}
+	while(head->next!=NULL)				// else go until the end and attach the newly created node
+		head= head->next;
+	
+	head->next=nd;
+	nd->next=NULL;
+	return 1;
+}
+
+void print(node **table, int i)			// function to print
+{
+	node *head;
+	if(i>=m || i<0)				// if the index is out of bounds print -1
+	{	
+		printf("-1\n");
+		return;
+	}
+	
+	head = table[i];				// else go to the correspoinding linked list
+	if(head==NULL)				// if empty list
+	{					
+		printf("-1\n");				// print -1
+		return;
+	}
+	while(head!=NULL)				// else go till the end while printing all the elements
+	{
+		printf("%d ", head->no);			
+		head=head->next;
+	}
+	printf("\n");
+	return;			
+}
+
+int delete(node **table, int no)			// function to delete
+{
+	int hval;
+	node *head;
+	node *hp;
+
+	hval = no%m;				// hash vale, go to the corresponding linked list
+	head = table[hval];
+	
+	if(head==NULL)				// if empty cannot delete
+		return -1;
+	else if(head->no==no)			// else if we need to delete the first node
+	{
+		table[hval]=head->next;		// store the next node in the first node
+		head->next = NULL;		// break the link between the first and the second node
+		free(head);				// free the first node
+		return 1;
+	}	
+	
+	while(head->next!=NULL)			// else go till the end we get the node to delete
+	{
+		if(head->next->no==no)		// we got the node to delete (i.e. head->next)
+		{
+			hp = head->next;
+			head->next = head->next->next;		// store the next node to the head->next
+			hp->next=NULL;		// break the link
+			free(hp);			// free the head->next
+			return 1;
+		}
+		head=head->next;
+	}
+	return -1;				// if value not found
+}
+
+int main()
+{
+	node **table;
+	node *pt;
+	char str[10];
+	int no;
+
+	scanf("%d", &m);
+    
+	table = (node**)malloc(m*sizeof(node*));			// table that contains m linked lists
+	for(int i=0; i<m; i++)
+		table[i]=NULL;						// initialzing head of all linked list to NULL
+
+	while(scanf("%s%d", str, &no)!=EOF)
+	{
+		if(strcmp(str, "INS")==0)
+		{
+			if(m<=0 || no<0)			// invalid insert
+				printf("-1\n");
+			else
+			{ 
+				no = insert(table, no);
+				if(no==-1)				// did not insert
+					printf("-1\n");
+			}
+		}
+		else if(strcmp(str, "PRT")==0)		// print the linked list
+		{
+			print(table, no);
+		}
+		else if(strcmp(str, "DEL")==0)		
+		{
+			if(m<=0 || no<0)			// invalid delete
+				printf("-1\n");
+			else
+			{
+				no = delete(table, no);	
+				if(no==-1)			// did not delete
+					printf("-1\n");
+			}		
+		}
+		else if(strcmp(str, "SRCH")==0)		
+		{
+			if(m<=0 || no<0)			// invalid search
+				printf("N\n");
+			else
+			{
+				pt = search(table, no);
+				if(pt==NULL)		// if got the element print Y else print N
+					printf("N\n");
+				else
+					printf("Y\n");
+			}
+		}
+		else
+			continue;
+	}
+	return 0;
+}
