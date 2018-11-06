@@ -1,0 +1,296 @@
+1. 
+Program to implement a hash table to store distinct keys that are non-negative integers with collisions resolved using the linear probing method
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+int m;			// global variable to store the table size
+
+int hashvalue(int val, int i)
+{
+	return (val%m+i)%m;		// hash function which gives the hashvalue
+}
+
+int search(int *table, int val)		// function to search , takes table as input and the value to be searched as val
+{
+	int hval;
+	int i=0;
+	while(i<m)					// while we reach an end of the table
+	{
+		hval = hashvalue(val, i);		// find the hash value 
+		printf("%d(%d) ", hval, table[hval]);		// printing according to the problem says in the question
+		if(table[hval]==val)			// if value found break
+			break;
+		else if(table[hval] == -1)		// if empty space is found break
+			break;
+		
+		i++;						// otherwise continue and try finding on the next box
+	}
+	if(i!=m  && table[hval]!=-1)			// if we came out of the while with the value to be found (i.e. table[hval]!=-1 (empty)), then return the hashvalue 
+		return hval;
+	return -1;						// else we didn't find the value 
+}
+
+
+void insert(int *table, int val)			// function for insert , takes table and value to be inserted
+{
+	int hval;
+	int i=0;
+	while(i<m)					// untill we reach end of the table
+	{
+		hval = hashvalue(val, i);			// find hashvalue
+		printf("%d(%d) ",hval, table[hval]);	// print according to the problem says
+		if(table[hval] < 0)				// means it is either empty or deleted (-1 or -2)
+		{
+			table[hval] = val;			// insert the value and break out
+			break;
+		}	
+		else if(table[hval]==val)			// else if the element is already present don't insert and break out 
+			break;
+		i++;							// else go to the next box
+	}
+	return ;
+}
+
+void delete(int *table, int x)			// function to delete value x
+{
+	int hval;
+	hval = search(table, x);			// search the value x in the table
+	if(hval!=-1)					// if value is present (hval!=-1)
+		table[hval] = -2;				// put value -2 at that place (means deleted)
+	return;
+}
+
+int main()
+{
+	int val;
+	char str[5];			// string to take input
+	int *table;				// table
+	int src;			
+	scanf("%d", &m);				
+	table = (int*)malloc(m*sizeof(int));		// memory to table
+	for(int i=0; i<m ; i++)
+		table[i] = -1;					// initializing all value to -1 (empty)	
+	while(scanf("%s%d", str, &val)!=EOF)
+	{
+		if(strcmp(str, "INS")==0)			// insert 
+		{
+			insert(table, val);
+			printf("\n");
+		}
+		else if(strcmp(str, "SRCH")==0)		// search 
+		{
+			 src = search(table, val);
+			printf("\n");
+		}
+		else
+		{
+			delete(table, val);			// delete
+			printf("\n");
+		}
+	}
+	return 0; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.
+Program to print the sorted array using quick sort method
+
+#include<stdio.h>
+#include<stdlib.h>
+		
+int partition(int *ar, int st, int end)			// function to find the partition index as well as it makes all the elements <= pivot on the left side of the pivot and > element on the right side
+{
+	int pindex=st, temp;					// starts the pivot index from st (starting point)
+	int pivot = ar[end];					// pivot is the last element of the array
+	
+	for(int i=st; i<end; i++)				// starting to end
+	{
+		if(ar[i]<=pivot)				// if the array[i]<=pivot swap it (make it on the left of the pivot and increase pivot index by 1)
+		{
+			temp = ar[i];
+			ar[i]=ar[pindex];
+			ar[pindex]=temp;
+			pindex++;
+		}
+	}
+	
+	temp = ar[pindex];				// at last swap the last element with the pivot index
+	ar[pindex]=ar[end];
+	ar[end]=temp;
+	
+	return pindex;
+}
+
+void quickSort(int *ar, int st, int end)			// quick sort function, takes starting and ending point of array ar
+{
+	if(st>=end)						// termination condition
+		return;
+
+	int pindex;
+	pindex = partition(ar, st, end);			// finding the partition index
+	//printf("\n%d\n", pindex);
+	quickSort(ar, st, pindex-1);				// recusion on the left half and right half of the array 
+	quickSort(ar, pindex+1, end);
+	return;
+}
+
+int main()
+{	
+	int n;
+	int *ar;
+	scanf("%d", &n);
+	
+	ar = (int*)malloc(n*sizeof(int));
+	for(int i=0; i<n; i++)				// scanning and sorting the array
+		scanf("%d", ar+i);
+
+	quickSort(ar, 0, n-1);
+	for(int i=0; i<n; i++)
+		printf("%d ", ar[i]);
+	printf("\n");
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.
+Program to merge overlapping intervals in the given set of intervals
+
+#include<stdio.h>
+#include<stdlib.h>
+
+typedef struct interval				// structure to store interval
+{
+	int strt, ed;
+}intval;
+
+void swap(intval *ar1, intval *ar2)			// swaps the starting and ending point of the intervals
+{
+		int temp;
+		temp = ar1->strt;
+		ar1->strt=ar2->strt;
+		ar2->strt=temp;
+		temp = ar1->ed;
+		ar1->ed = ar2->ed;
+		ar2->ed = temp;
+}
+
+int partition(intval *ar, int st, int end)			// same as specified above
+{
+	int pindex=st, temp;
+	int pivot = ar[end].strt;			// sort according to the starting time of the intervals 
+
+	for(int i=st; i<end; i++)			
+	{
+		if(ar[i].strt<=pivot)		
+		{
+			swap(&ar[i], &ar[pindex]);
+			pindex++;
+		}
+	}
+	
+	swap(&ar[pindex], &ar[end]);
+	
+	return pindex;
+}
+
+void quickSort(intval *ar, int st, int end)		// same as specified above
+{
+	if(st>=end)					// termination condition
+		return;
+
+	int pindex;
+	pindex = partition(ar, st, end);
+	//printf("\n%d\n", pindex);
+	quickSort(ar, st, pindex-1);		// same as specified above
+	quickSort(ar, pindex+1, end);
+	return;
+}
+
+int main()
+{	
+	int m;
+	intval *ar;
+	scanf("%d", &m);
+	
+	ar = (intval*)malloc(m*sizeof(intval));			// structure stores the intervals
+	for(int i=0; i<m; i++)
+		scanf("%d%d", &ar[i].strt, &ar[i].ed);
+
+	quickSort(ar, 0, m-1);			// sorting the structure according to the starting time
+	
+	for(int i=1; i<m+1; i++)
+	{
+		int end = ar[i-1].ed;		// first end is ar[0].end
+		printf("%d ", ar[i-1].strt);		// start is ar[0].strt
+		while(i<m && end>=ar[i].strt)		// now if end is smaller than the next starting point i++
+		{
+			if(end<ar[i].ed)			// now if end < current end of the interval, change end to the ar[i].end
+				end=ar[i].ed;
+			i++;
+		}
+		
+		printf("%d\n", end);			// loop comes out only when our end is smaller than the starting of the next interval, hence print end
+	}				// now after this new interval will come which has starting point greater than current end
+				
+				
+		example why I am doing this is :
+		
+		6
+		1 9
+		2 3
+		4 5
+		4 9
+		5 6
+		6 7 
+
+		
+		before this I was getting output as :
+		
+		1 9
+		5 7
+		
+		
+		Now :
+		
+		1 9
+		
+	}
+	return 0;	
+
+}
